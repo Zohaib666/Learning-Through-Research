@@ -1,4 +1,4 @@
-# 🧠 AI Research Lab — My Personal Research Workspace
+# 🧠 Learning Through Research  — My Personal Research Workspace
 
 Welcome to my **AI Research Lab**, where I collect and summarize the research papers I study across my main subjects:
 - Advanced Artificial Intelligence
