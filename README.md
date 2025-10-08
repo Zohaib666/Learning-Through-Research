@@ -1,6 +1,6 @@
 # 🧠 Learning Through Research  — My Personal Research Workspace
 
-Welcome to my **AI Research Lab**, where I collect and summarize the research papers I study across my main subjects:
+Welcome to my **Learning-Through-Research**, where I collect and summarize the research papers I study across my main subjects:
 - Advanced Artificial Intelligence
 - Machine Learning
 - Internet of Things (IoT)
