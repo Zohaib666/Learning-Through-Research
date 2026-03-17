@@ -1,0 +1,109 @@
+role eu(EU, DN: agent,
+        Pu, Pn: public_key,
+        H1, H2, H6: hash_func,
+        SND, RCV: channel(dy))
+played_by EU
+def=
+
+local
+  State: nat,
+  Tu, A, M, DIDu, Vu, N, Vn, Tn: text
+
+init
+  State := 0
+
+transition
+
+  1. State = 0 /\ RCV(start) =|>
+     State' := 1 /\
+     Tu' := new() /\
+     A' := new() /\
+     M' := H1(A') /\
+     DIDu' := H2(A'.Tu') /\
+     Vu' := H2(EU.M'.Tu') /\
+     SND(M'.DIDu'.Vu'.Tu')
+
+  2. State = 1 /\ RCV(N.Vn.Tn) =|>
+     State' := 2 /\
+     request(EU, DN, eu_dn_sk,
+             H6(A.N.EU.DN))
+
+end role
+
+
+
+role dn(EU, DN: agent,
+        Pu, Pn: public_key,
+        H1, H2, H6: hash_func,
+        SND, RCV: channel(dy))
+played_by DN
+def=
+
+local
+  State: nat,
+  Tn, B, N, M, DIDu, Vu, Tu, Vn: text
+
+init
+  State := 0
+
+transition
+
+  1. State = 0 /\ RCV(M.DIDu.Vu.Tu) =|>
+     State' := 1 /\
+     Tn' := new() /\
+     B' := new() /\
+     N' := H1(B') /\
+     Vn' := H6(DN.B'.M.Tn') /\
+     witness(DN, EU, eu_dn_sk,
+             H6(B.N.EU.DN)) /\
+     SND(N'.Vn'.Tn')
+
+end role
+
+
+
+role session(EU, DN: agent,
+             Pu, Pn: public_key,
+             H1, H2, H6: hash_func)
+def=
+
+local
+  SE, RE: channel(dy)
+
+composition
+  eu(EU, DN, Pu, Pn, H1, H2, H6, SE, RE)
+  /\
+  dn(EU, DN, Pu, Pn, H1, H2, H6, RE, SE)
+
+end role
+
+
+
+role environment()
+def=
+
+const
+  eu_dn_sk: protocol_id,
+  alice, bob, i: agent,
+  pu, pn: public_key,
+  h1, h2, h6: hash_func
+
+intruder_knowledge = {alice, bob, i, pu, pn, h1, h2, h6}
+
+composition
+  session(alice, bob, pu, pn, h1, h2, h6)
+  /\
+  session(alice, i, pu, pn, h1, h2, h6)
+  /\
+  session(i, bob, pu, pn, h1, h2, h6)
+
+end role
+
+
+
+goal
+authentication_on eu_dn_sk
+end goal
+
+
+environment()
