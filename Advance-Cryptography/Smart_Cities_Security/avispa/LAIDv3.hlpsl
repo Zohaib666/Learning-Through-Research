@@ -1,0 +1,107 @@
+role device(U, HS : agent,
+            G     : text,
+            H     : hash_func,
+            SND, RCV : channel(dy))
+played_by U
+def=
+  local
+    State          : nat,
+    PW, Rd, Gd, Gs : text,
+    KSU, Vprime    : text,
+    MS, MU         : text
+  init
+    State := 0
+  transition
+
+    1. State = 0 /\ RCV(start)
+    =|>
+       State' := 1
+       /\ PW' := new()
+       /\ Rd' := new()
+       /\ Gd' := exp(G, Rd')
+       /\ SND(U.Gd')
+
+    2. State = 1 /\ RCV(MS'.Gs')
+    =|>
+       State'   := 2
+       /\ Vprime' := H(PW.Rd)
+       /\ KSU'    := H(Vprime'.exp(Gs', Rd))
+       /\ MU'     := H(KSU'.Gs')
+       /\ SND(MU')
+       /\ secret(KSU', sec_ksu, {U, HS})
+       /\ witness(U, HS, auth_1_ksu, KSU')
+       /\ request(U, HS, auth_2_gs, Gs')
+
+end role
+
+
+role hs(HS, U : agent,
+        G     : text,
+        H     : hash_func,
+        SND, RCV : channel(dy))
+played_by HS
+def=
+  local
+    State          : nat,
+    ID, Rs, Gd, Gs : text,
+    KSU            : text,
+    MS, MU         : text
+  init
+    State := 0
+  transition
+
+    1. State = 0 /\ RCV(U.Gd')
+    =|>
+       State' := 1
+       /\ ID' := new()
+       /\ Rs' := new()
+       /\ Gs' := exp(G, Rs')
+       /\ KSU' := H(H(ID'.Gs').exp(Gd', Rs'))
+       /\ MS'  := H(KSU'.Gs')
+       /\ SND(MS'.Gs')
+       /\ secret(KSU', sec_ksu, {HS, U})
+       /\ witness(HS, U, auth_2_gs, Gs')
+
+    2. State = 1 /\ RCV(H(KSU.Gs))
+    =|>
+       State' := 2
+       /\ request(HS, U, auth_1_ksu, KSU)
+
+end role
+
+
+role session(U, HS : agent,
+             G     : text,
+             H     : hash_func)
+def=
+  local
+    S1, R1, S2, R2 : channel(dy)
+  composition
+       device(U, HS, G, H, S1, R1)
+    /\ hs(HS, U, G, H, S2, R2)
+end role
+
+
+role environment()
+def=
+  const
+    u, hs      : agent,
+    g          : text,
+    h          : hash_func,
+    sec_ksu    : protocol_id,
+    auth_1_ksu : protocol_id,
+    auth_2_gs  : protocol_id
+  intruder_knowledge = {u, hs, g, h}
+  composition
+    session(u, hs, g, h)
+end role
+
+
+goal
+  secrecy_of sec_ksu
+  authentication_on auth_1_ksu
+  authentication_on auth_2_gs
+end goal
+
+
+environment()
